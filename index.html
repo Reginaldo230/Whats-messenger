@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enviar Mensagem para WhatsApp</title>
+  <!-- Adicione os links para os estilos do Bootstrap -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <!-- Adicione os estilos do SweetAlert -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.css">
+  <!-- Adicione o ícone do WhatsApp -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <!-- Estilos personalizados -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .navbar {
+      background-color: #25d366; /* Verde do WhatsApp */
+    }
+    .navbar-brand {
+      font-weight: bold;
+      color: #fff;
+    }
+    .message-container {
+      margin-top: 60px; /* Altura da barra de navegação */
+      padding: 20px;
+    }
+    .message {
+      background-color: #f2f2f2;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .delete-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      cursor: pointer;
+    }
+    /* Ajustes nos inputs */
+    #numeroInput,
+    #messageInput {
+      width: 48%; /* 48% para cada input */
+      margin-right: 2%; /* Espaço entre os inputs */
+    }
+    #messageInput {
+      margin-right: 0; /* Remover margem à direita do último input */
+    }
+    #enviarBtn {
+      width: 98%; /* Largura do botão de enviar */
+    }
+    
+    .fa-whatsapp {
+      font-size: 25px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Barra de navegação -->
+  <nav class="navbar navbar-expand-md navbar-dark">
+    <div class="container">
+      <a class="navbar-brand" href="#"><i class="fab fa-whatsapp"></i> WhatsAp - Messenger </a>
+      <button class="navbar-toggler" type="button" style="outline-color: green;" data-toggle="collapse" data-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <form class="form-inline ml-auto">
+          <input type="tel" class="form-control mr-sm-2" id="numeroInput" placeholder="Número">
+          <input type="text" class="form-control mr-sm-2" id="messageInput" placeholder="Mensagem">
+          <button class="btn btn-outline-light my-2 my-sm-0" type="button" id="enviarBtn" onclick="enviarMensagem()">Enviar</button>
+        </form>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Container para exibir mensagens -->
+  <div class="container message-container" id="messagesContainer">
+    <!-- Mensagens serão adicionadas aqui -->
+  </div>
+
+  <!-- Adicione os scripts do Bootstrap (JQuery e Popper.js) -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <!-- Adicione o script do SweetAlert -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
+  <!-- Script personalizado -->
+  <script>
+    // Enviar mensagem para o WhatsApp
+    function enviarMensagem() {
+      var numero = document.getElementById('numeroInput').value;
+      var mensagem = document.getElementById('messageInput').value;
+      var numeroWhatsApp = numero;
+      var linkWhatsApp = 'https://api.whatsapp.com/send?phone=' + numeroWhatsApp + '&text=' + encodeURIComponent(mensagem);
+     
+      swal({
+        title: "Confirmar Envio",
+        text: "Deseja enviar a mensagem para o número " + numeroWhatsApp + "?\n\nMensagem: " + mensagem,
+        icon: "info",
+        buttons: ["Cancelar", "Enviar"],
+        dangerMode: false,
+      })
+      .then((enviar) => {
+        if (enviar) {
+          // Adicionar mensagem ao local storage
+          var messageData = {
+            numero: numeroWhatsApp,
+            mensagem: mensagem
+          };
+          var messages = JSON.parse(localStorage.getItem('whatsappMessages')) || [];
+          messages.push(messageData);
+          localStorage.setItem('whatsappMessages', JSON.stringify(messages));
+          
+          document.getElementById('numeroInput').value = '';
+          document.getElementById('messageInput').value = '';
+          // Adicionar mensagem à lista de mensagens
+          adicionarMensagem(numeroWhatsApp, mensagem);
+
+          // Abrir o link do WhatsApp
+          window.open(linkWhatsApp, '_blank');
+        }
+      });
+    }
+
+    // Adicionar mensagem à lista de mensagens
+    function adicionarMensagem(numero, mensagem) {
+      var messagesContainer = document.getElementById('messagesContainer');
+      var messageDiv = document.createElement('div');
+      messageDiv.classList.add('message');
+      messageDiv.innerHTML = '<strong>' + numero + ':</strong> ' + mensagem +
+                             '<span class="delete-btn" onclick="excluirMensagem(this)"><i class="fas fa-trash-alt"></i></span>';
+      messagesContainer.appendChild(messageDiv);
+
+      // Remover mensagem "Sem Mensagens" se houver pelo menos uma mensagem
+      var noMessagesDiv = document.getElementById('noMessagesDiv');
+      if (noMessagesDiv) {
+        noMessagesDiv.remove();
+      }
+    }
+
+    // Excluir mensagem
+    function excluirMensagem(btn) {
+      var messageDiv = btn.parentElement;
+      var messageText = messageDiv.innerText.trim();
+      var messageIndex = -1;
+      var messages = JSON.parse(localStorage.getItem('whatsappMessages')) || [];
+      
+      messages.forEach(function(message, index) {
+        if (message.numero + ': ' + message.mensagem === messageText) {
+          messageIndex = index;
+        }
+      });
+
+      if (messageIndex !== -1) {
+        swal({
+          title: "Excluir Mensagem",
+          text: "Deseja realmente excluir esta mensagem?",
+          icon: "warning",
+          buttons: ["Cancelar", "Excluir"],
+          dangerMode: true,
+        })
+        .then((excluir) => {
+          if (excluir) {
+            messages.splice(messageIndex, 1);
+            localStorage.setItem('whatsappMessages', JSON.stringify(messages));
+            messageDiv.remove();
+
+            // Se não houver mais mensagens, exibir a mensagem "Sem Mensagens"
+            if (messages.length === 0) {
+              var messagesContainer = document.getElementById('messagesContainer');
+              var noMessagesDiv = document.createElement('div');
+              noMessagesDiv.classList.add('alert', 'alert-info');
+              noMessagesDiv.textContent = "Sem Mensagens, abra o menu para mandar uma mensagem";
+              noMessagesDiv.id = 'noMessagesDiv';
+              messagesContainer.appendChild(noMessagesDiv);
+            }
+          }
+        });
+      }
+    }
+
+    // Mostrar mensagens do local storage ao carregar a página
+    window.onload = function() {
+      var messages = JSON.parse(localStorage.getItem('whatsappMessages')) || [];
+      if (messages.length === 0) {
+        var messagesContainer = document.getElementById('messagesContainer');
+        var noMessagesDiv = document.createElement('div');
+        noMessagesDiv.classList.add('alert', 'alert-info');
+        noMessagesDiv.textContent = "Sem Mensagens, abra o menu para mandar uma mensagem";
+        noMessagesDiv.id = 'noMessagesDiv';
+        messagesContainer.appendChild(noMessagesDiv);
+      } else {
+        messages.forEach(function(message) {
+          adicionarMensagem(message.numero, message.mensagem);
+        });
+      }
+    };
+  </script>
+
+</body>
+</html>
